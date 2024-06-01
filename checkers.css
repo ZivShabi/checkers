@@ -1,0 +1,217 @@
+ @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;600;700;900&display=swap');
+
+ :root {
+     --bg: black;
+ }
+
+ body {
+     direction: rtl;
+     font-family: 'Rubik', sans-serif;
+     background-color: var(--bg);
+     margin: 3em 0;
+     color: white;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+
+     ;
+ }
+
+ .select,
+ #playerSelect {
+     border: 2px solid rgb(43, 56, 240);
+     font-size: 1.6em;
+     font-weight: 900;
+     color: white;
+     background-color: black;
+     width: max-content;
+     padding: 10px;
+     margin-bottom: 20px;
+     text-align: center;
+ }
+
+ button {
+     border: 2px solid rgb(43, 56, 240);
+     font-size: 1.6em;
+     font-weight: 900;
+     color: white;
+     background-color: black;
+     padding: 10px;
+     cursor: pointer;
+     margin: 10px;
+ }
+
+ button:hover {
+     background-color: rgb(43, 56, 240);
+ }
+
+ .checkers-board {
+     display: grid;
+     grid-template-columns: repeat(8, 6vw);
+     grid-template-rows: repeat(8, 6vw);
+     border: 2px solid black;
+     width: 80%;
+     margin: 0 auto;
+     padding: 10vw;
+     gap: 0.8vw;
+ }
+
+ .checkers-board .square {
+     width: 100%;
+     height: 100%;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     font-size: 2vw;
+ }
+
+ .light {
+     background-color: #f0d9b5;
+ }
+
+ .dark {
+     background-color: #b58863;
+ }
+
+ .square .black-piece,
+ .square .white-piece {
+     width: 60%;
+     height: 60%;
+     border-radius: 50%;
+     box-shadow: 0.2px 0.2px 50px 2px;
+ }
+
+ .square .black-piece {
+     background-color: black;
+ }
+
+ .square .white-piece {
+     background-color: white;
+ }
+
+ .selected {
+     border: 2px solid blue;
+     border-radius: 50%;
+ }
+
+ .possible-move.highlighted {
+     border: 2px solid green;
+     font-weight: 900;
+     font-size: xx-large;
+     border-radius: 50%;
+     transition: background-color 0.3s ease, border-color 0.3s ease;
+ }
+
+ .highlighted {
+     transition: background-color 0.3s ease, border-color 0.3s ease;
+ }
+
+ .end-game-message {
+     position: fixed;
+     top: 50%;
+     left: 50%;
+     transform: translate(-50%, -50%);
+     background-color: rgba(0, 0, 0, 0.8);
+     color: white;
+     padding: 20px;
+     border-radius: 10px;
+     z-index: 1000;
+     text-align: center;
+ }
+
+ .end-game-message button {
+     background-color: #4CAF50;
+     border: none;
+     color: white;
+     padding: 10px 20px;
+     text-align: center;
+     text-decoration: none;
+     display: inline-block;
+     font-size: 16px;
+     margin-top: 20px;
+     cursor: pointer;
+     border-radius: 5px;
+     transition: background-color 0.3s ease;
+ }
+
+ .end-game-message button:hover {
+     background-color: #45a049;
+ }
+
+ /* אנימציה לאיפוס הלוח */
+ .checkers-board.animated {
+     transition: opacity 0.5s ease;
+     opacity: 0;
+ }
+
+
+
+ .current-player {
+     border: 2px solid red;
+     font-size: 1.6em;
+     font-weight: 900;
+     color: white;
+     width: max-content;
+     margin: 0 auto;
+     padding: 10px;
+     position: relative;
+     top: -20px;
+ }
+
+ .piece {
+     transition: transform 0.2s ease-in-out;
+     position: absolute;
+     width: 60%;
+     height: 60%;
+     border-radius: 50%;
+     top: 50%;
+     left: 50%;
+     transform: translate(-50%, -50%);
+ }
+
+
+
+ .black-king-piece,
+ .white-king-piece {
+     width: 80%;
+     height: 80%;
+     border-radius: 50%;
+     margin: 10%;
+ }
+
+ .black-king-piece {
+     background-color: black;
+     border: 5px solid yellow;
+     border-radius: 50%;
+ }
+
+ .white-king-piece {
+     background-color: white;
+     border: 5px solid yellow;
+     border-radius: 50%;
+ }
+
+ .result-window {
+     position: fixed;
+     top: 50%;
+     left: 50%;
+     transform: translate(-50%, -50%);
+     background-color: rgba(0, 0, 0, 0.8);
+     color: white;
+     padding: 20px;
+     border-radius: 10px;
+     display: none;
+ }
+
+ #positionMessage {
+     display: none;
+     font-size: 24px;
+     font-weight: bold;
+     margin-top: 20px;
+ }
+
+ /* סגנון לאנימציה של הכלים */
+ .move-animation {
+     transition: transform 0.02s cubic-bezier(0.86, 0, 0.07, 1) ease-in-out;
+ }

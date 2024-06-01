@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkers</title>
+    <link rel="stylesheet" href="checkers.css">
+    <script src="gameLogic.js" defer></script>
+
+</head>
+
+<body>
+
+    <div class="result-window" id="resultWindow" style="display: none;">
+        <h2 id="resultMessage"></h2>
+        <button id="restartGameBtn">התחל משחק חדש</button>
+    </div>
+    <div class="game-container">
+        <div class="checkers-board"></div>
+        <div class="current-player">שחקן נוכחי: לבן</div>
+        <button id="start-game">התחל משחק</button>
+        <button id="restart-game" style="display:none;">איפוס משחק</button>
+        <div class="end-game-message" style="display: none;">
+            <div class="victory-message">
+                <p id="victoryMessage"></p>
+                <p id="positionMessage"></p>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
