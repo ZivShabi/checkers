@@ -5,13 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkers</title>
-    <link rel="stylesheet" href="checkers.css">
-    <script src="gameLogic.js" defer></script>
 
 </head>
 
 <body>
-
     <div class="result-window" id="resultWindow" style="display: none;">
         <h2 id="resultMessage"></h2>
         <button id="restartGameBtn">התחל משחק חדש</button>
@@ -28,7 +25,276 @@
             </div>
         </div>
     </div>
+    <script>
+        class CheckersGame {
+            constructor() {
+                this.currentPlayer = 'W';
+                this.EMPTY_SQUARE = ' ';
+                this.initializeBoard();
+                this.selectedSquare = null;
+                this.firstClick = false;
+                this.updateBoardView();
+                this.addSquareClickListeners();
+            }
 
+            initializeBoard() {
+                this.checkersBoard = [
+                    ['B', '.', 'B', '.', 'B', '.', 'B', '.'],
+                    ['.', 'B', '.', 'B', '.', 'B', '.', 'B'],
+                    ['B', '.', 'B', '.', 'B', '.', 'B', '.'],
+                    ['.', ' ', '.', ' ', '.', ' ', '.', ' '],
+                    [' ', '.', ' ', '.', ' ', '.', ' ', '.'],
+                    ['.', 'W', '.', 'W', '.', 'W', '.', 'W'],
+                    ['W', '.', 'W', '.', 'W', '.', 'W', '.'],
+                    ['.', 'W', '.', 'W', '.', 'W', '.', 'W']
+                ];
+            }
+
+            resetBoard() {
+                this.initializeBoard();
+                this.updateBoardView();
+                this.changePlayerTurn();
+            }
+
+            changePlayerTurn() {
+                this.currentPlayer = this.currentPlayer === 'W' ? 'B' : 'W';
+                document.querySelector(".current-player").textContent = `שחקן נוכחי: ${this.currentPlayer === 'W' ? 'לבן' : 'שחור'}`;
+            }
+
+            startGame() {
+                this.resetBoard();
+                document.getElementById("start-game").style.display = "none";
+                document.getElementById("restart-game").style.display = "inline";
+            }
+
+            isGameOver() {
+                const pieces = { 'W': 0, 'B': 0 };
+                let movesAvailable = false;
+
+                for (let i = 0; i < this.checkersBoard.length; i++) {
+                    for (let j = 0; j < this.checkersBoard[i].length; j++) {
+                        const piece = this.checkersBoard[i][j];
+                        if (piece === 'W' || piece === 'WK') {
+                            pieces['W']++;
+                            const possibleMoves = this.getPossibleMoves(i, j);
+                            if (possibleMoves.length > 0) movesAvailable = true;
+                        } else if (piece === 'B' || piece === 'BK') {
+                            pieces['B']++;
+                            const possibleMoves = this.getPossibleMoves(i, j);
+                            if (possibleMoves.length > 0) movesAvailable = true;
+                        }
+                    }
+                }
+
+                if (!movesAvailable || pieces['W'] === 0 || pieces['B'] === 0) {
+                    this.displayEndGameMessage(pieces['W'] === 0 ? 'Black wins!' : 'White wins!');
+                    return true;
+                }
+
+                return false;
+            }
+
+            isValidMove(row, col, targetRow, targetCol) {
+                const piece = this.checkersBoard[row][col];
+                const opponentColor = this.currentPlayer === 'W' ? 'B' : 'W';
+                const rowDiff = Math.abs(targetRow - row);
+                const colDiff = Math.abs(targetCol - col);
+
+                if (rowDiff !== colDiff) return false;
+
+                if (targetRow < 0 || targetRow >= this.checkersBoard.length ||
+                    targetCol < 0 || targetCol >= this.checkersBoard[0].length) {
+                    return false;
+                }
+
+                if (piece === 'WK' || piece === 'BK') {
+                    if (this.checkersBoard[targetRow][targetCol] === this.EMPTY_SQUARE) {
+                        for (let i = 1; i < rowDiff; i++) {
+                            const intermediateRow = row + i * Math.sign(targetRow - row);
+                            const intermediateCol = col + i * Math.sign(targetCol - col);
+                            if (this.checkersBoard[intermediateRow][intermediateCol] !== this.EMPTY_SQUARE) return false;
+                        }
+                        return true;
+                    } else if (this.checkersBoard[targetRow][targetCol] === opponentColor) {
+                        const jumpRow = targetRow + Math.sign(targetRow - row);
+                        const jumpCol = targetCol + Math.sign(targetCol - col);
+                        if (jumpRow >= 0 && jumpRow < this.checkersBoard.length &&
+                            jumpCol >= 0 && jumpCol < this.checkersBoard[0].length &&
+                            this.checkersBoard[jumpRow][jumpCol] === this.EMPTY_SQUARE) {
+                            return true;
+                        }
+                    }
+                } else {
+                    const rowDirection = this.currentPlayer === 'W' ? -1 : 1;
+                    if (rowDiff === 1 && colDiff === 1 && targetRow === row + rowDirection) {
+                        if (this.checkersBoard[targetRow][targetCol] === this.EMPTY_SQUARE) return true;
+                    } else if (rowDiff === 2 && colDiff === 2 && targetRow === row + 2 * rowDirection) {
+                        const middleRow = (row + targetRow) / 2;
+                        const middleCol = (col + targetCol) / 2;
+                        if (this.checkersBoard[middleRow][middleCol] === opponentColor &&
+                            this.checkersBoard[targetRow][targetCol] === this.EMPTY_SQUARE) {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            getPossibleMoves(row, col) {
+                let possibleMoves = [];
+                const piece = this.checkersBoard[row][col];
+                const directions = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+
+                for (const [rowDir, colDir] of directions) {
+                    let i = 1;
+                    while (true) {
+                        const targetRow = row + i * rowDir;
+                        const targetCol = col + i * colDir;
+                        if (targetRow < 0 || targetRow >= this.checkersBoard.length ||
+                            targetCol < 0 || targetCol >= this.checkersBoard[0].length) {
+                            break;
+                        }
+                        if (this.isValidMove(row, col, targetRow, targetCol)) {
+                            possibleMoves.push({ row: targetRow, col: targetCol });
+                        } else {
+                            break;
+                        }
+                        i++;
+                    }
+                }
+
+                return possibleMoves;
+            }
+
+            selectSquare(row, col) {
+                if (document.querySelector(".end-game-message").style.display === "block") return;
+
+                if (!this.firstClick) {
+                    const playerPiece = this.checkersBoard[row][col];
+                    if (playerPiece === this.currentPlayer || playerPiece === (this.currentPlayer === 'W' ? 'WK' : 'BK')) {
+                        const selectedSquareElement = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+                        if (selectedSquareElement) {
+                            selectedSquareElement.classList.add("selected");
+                            this.firstClick = true;
+                            this.selectedSquare = { row, col };
+                            this.highlightPossibleMovesForCurrentPlayer(row, col);
+                        }
+                    }
+                } else {
+                    const possibleMoves = document.querySelectorAll(".possible-move");
+                    possibleMoves.forEach(move => {
+                        if (move.dataset.row == row && move.dataset.col == col) {
+                            this.movePiece(this.selectedSquare.row, this.selectedSquare.col, row, col);
+                        }
+                    });
+                    this.removePreviousSelectionHighlight();
+                    this.firstClick = false;
+                    this.selectedSquare = null;
+                }
+            }
+
+            removePreviousSelectionHighlight() {
+                document.querySelectorAll(".selected").forEach(square => {
+                    square.classList.remove("selected");
+                });
+                document.querySelectorAll(".possible-move").forEach(square => {
+                    square.classList.remove("possible-move", "highlighted");
+                });
+            }
+
+            movePiece(startRow, startCol, endRow, endCol) {
+                this.checkersBoard[endRow][endCol] = this.checkersBoard[startRow][startCol];
+                this.checkersBoard[startRow][startCol] = this.EMPTY_SQUARE;
+
+                let isJump = false;
+                if (Math.abs(endRow - startRow) === 2 && Math.abs(endCol - startCol) === 2) {
+                    const jumpedRow = (startRow + endRow) / 2;
+                    const jumpedCol = (startCol + endCol) / 2;
+                    this.checkersBoard[jumpedRow][jumpedCol] = this.EMPTY_SQUARE;
+                    isJump = true;
+                }
+
+                if (endRow === 0 && this.checkersBoard[endRow][endCol] === 'W') {
+                    this.checkersBoard[endRow][endCol] = 'WK';
+                } else if (endRow === this.checkersBoard.length - 1 && this.checkersBoard[endRow][endCol] === 'B') {
+                    this.checkersBoard[endRow][endCol] = 'BK';
+                }
+
+                this.updateBoardView();
+
+                if (!isJump || !this.getPossibleMoves(endRow, endCol).some(move => move.row === endRow && move.col === endCol)) {
+                    this.changePlayerTurn();
+                }
+
+                if (this.isGameOver()) {
+                    setTimeout(() => {
+                        this.displayEndGameMessage(this.currentPlayer === 'W' ? 'Black wins!' : 'White wins!');
+                    }, 100);
+                }
+            }
+
+            highlightPossibleMovesForCurrentPlayer(row, col) {
+                this.getPossibleMoves(row, col).forEach(move => {
+                    const square = document.querySelector(`.square[data-row="${move.row}"][data-col="${move.col}"]`);
+                    if (square) {
+                        square.classList.add("possible-move", "highlighted");
+                    }
+                });
+            }
+
+            updateBoardView() {
+                const boardElement = document.querySelector(".checkers-board");
+                boardElement.innerHTML = '';
+
+                this.checkersBoard.forEach((row, rowIndex) => {
+                    row.forEach((cell, colIndex) => {
+                        const squareElement = document.createElement("div");
+                        squareElement.className = `square ${((rowIndex + colIndex) % 2 === 0) ? 'light' : 'dark'}`;
+                        squareElement.dataset.row = rowIndex;
+                        squareElement.dataset.col = colIndex;
+
+                        if (cell !== this.EMPTY_SQUARE) {
+                            const pieceElement = document.createElement("div");
+                            pieceElement.className = `piece ${cell === 'W' || cell === 'WK' ? 'white-piece' : 'black-piece'}`;
+                            if (cell === 'WK' || cell === 'BK') {
+                                pieceElement.classList.add(`${cell === 'W' || cell === 'WK' ? 'white-king-piece' : 'black-king-piece'}`);
+                            }
+                            squareElement.appendChild(pieceElement);
+                        }
+
+                        boardElement.appendChild(squareElement);
+                    });
+                });
+            }
+
+            displayEndGameMessage(message) {
+                const resultWindow = document.getElementById("resultWindow");
+                const resultMessage = document.getElementById("resultMessage");
+                resultMessage.textContent = message;
+                resultWindow.style.display = "block";
+            }
+
+            addSquareClickListeners() {
+                document.querySelectorAll(".square").forEach(square => {
+                    square.addEventListener("click", () => {
+                        const row = square.dataset.row;
+                        const col = square.dataset.col;
+                        this.selectSquare(row, col);
+                    });
+                });
+            }
+        }
+
+        const game = new CheckersGame();
+
+        document.getElementById("start-game").addEventListener("click", () => game.startGame());
+        document.getElementById("restart-game").addEventListener("click", () => game.resetBoard());
+        document.getElementById("restartGameBtn").addEventListener("click", () => {
+            game.resetBoard();
+            document.getElementById("resultWindow").style.display = "none";
+        });
+    </script>
 </body>
 
 </html>
