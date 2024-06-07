@@ -22,15 +22,18 @@ class CheckersGame {
             ['.', 'W', '.', 'W', '.', 'W', '.', 'W']
         ];
     }
+
     resetBoard() {
         this.initializeBoard();
         this.updateBoardView();
         this.changePlayerTurn();
     }
+
     resetBoardAnimation() {
-        this.resetBoard()
+        this.resetBoard();
         document.querySelector(".checkers-board").classList.remove("animated");
     }
+
     changePlayerTurn() {
         this.currentPlayer = this.currentPlayer === 'W' ? 'B' : 'W';
         document.querySelector(".current-player").textContent = `שחקן נוכחי: ${this.currentPlayer === 'W' ? 'לבן' : 'שחור'}`;
@@ -43,25 +46,38 @@ class CheckersGame {
         startButton.style.display = "none";
         restartButton.style.display = "inline";
     }
+
     isGameOver() {
         let whitePieces = 0;
         let blackPieces = 0;
         let movesAvailable = false; // הוספת פלג עבור בדיקת מהלך זמין
+        let kingMovesCount = 0;
 
         for (let i = 0; i < this.checkersBoard.length; i++) {
             for (let j = 0; j < this.checkersBoard[i].length; j++) {
                 if (this.checkersBoard[i][j] === 'W' || this.checkersBoard[i][j] === 'WK') {
                     whitePieces++;
-                    if (this.highlightPossibleMovesForCurrentPlayer(i, j)) { // בדיקה אם יש לאזרח מהלך אפשרי
+                    if (this.highlightPossibleMovesForCurrentPlayer(i, j).length > 0) { // בדיקה אם יש לאזרח מהלך אפשרי
                         movesAvailable = true; // אם כן, מסמן שיש מהלך אפשרי
+                    }
+                    if (this.checkersBoard[i][j] === 'WK') {
+                        kingMovesCount++;
                     }
                 } else if (this.checkersBoard[i][j] === 'B' || this.checkersBoard[i][j] === 'BK') {
                     blackPieces++;
-                    if (this.highlightPossibleMovesForCurrentPlayer(i, j)) { // בדיקה אם יש לאזרח מהלך אפשרי
+                    if (this.highlightPossibleMovesForCurrentPlayer(i, j).length > 0) { // בדיקה אם יש לאזרח מהלך אפשרי
                         movesAvailable = true; // אם כן, מסמן שיש מהלך אפשרי
+                    }
+                    if (this.checkersBoard[i][j] === 'BK') {
+                        kingMovesCount++;
                     }
                 }
             }
+        }
+
+        if (kingMovesCount >= 15) {
+            this.displayEndGameMessage('Draw - 15 king moves without capture');
+            return true;
         }
 
         if (!movesAvailable) { // אם אין מהלך אפשרי לשחקן
@@ -87,6 +103,7 @@ class CheckersGame {
     isValidMove(row, col, targetRow, targetCol) {
         const piece = this.checkersBoard[row][col];
         const opponentColor = this.currentPlayer === 'W' ? 'B' : 'W';
+        const opponentKing = this.currentPlayer === 'W' ? 'BK' : 'WK'; // מתייחס גם למלכים של היריב
         const rowDiff = Math.abs(targetRow - row);
         const colDiff = Math.abs(targetCol - col);
 
@@ -111,12 +128,12 @@ class CheckersGame {
                     }
                 }
                 return true;
-            } else if (this.checkersBoard[targetRow][targetCol] === opponentColor) {
+            } else if (this.checkersBoard[targetRow][targetCol] === opponentColor || this.checkersBoard[targetRow][targetCol] === opponentKing) {
                 // דילוג עבור מלך
                 const jumpRow = targetRow + Math.sign(targetRow - row);
                 const jumpCol = targetCol + Math.sign(targetCol - col);
-                if (jumpRow > 0 && jumpRow < this.checkersBoard.length &&
-                    jumpCol > 0 && jumpCol < this.checkersBoard[0].length &&
+                if (jumpRow >= 0 && jumpRow < this.checkersBoard.length &&
+                    jumpCol >= 0 && jumpCol < this.checkersBoard[0].length &&
                     this.checkersBoard[jumpRow][jumpCol] === this.EMPTY_SQUARE) {
                     return true;
                 }
@@ -131,7 +148,7 @@ class CheckersGame {
             } else if (rowDiff === 2 && colDiff === 2 && targetRow === row + 2 * rowDirection) {
                 const middleRow = (row + targetRow) / 2;
                 const middleCol = (col + targetCol) / 2;
-                if (this.checkersBoard[middleRow][middleCol] === opponentColor &&
+                if ((this.checkersBoard[middleRow][middleCol] === opponentColor || this.checkersBoard[middleRow][middleCol] === opponentKing) &&
                     this.checkersBoard[targetRow][targetCol] === this.EMPTY_SQUARE) {
                     return true;
                 }
@@ -193,6 +210,27 @@ class CheckersGame {
         return possibleMoves;
     }
 
+    hasMoreJumps(row, col) {
+        const piece = this.checkersBoard[row][col];
+        const opponentColor = this.currentPlayer === 'W' ? 'B' : 'W';
+        const opponentKing = this.currentPlayer === 'W' ? 'BK' : 'WK'; // מתייחס גם למלכים של היריב
+        const directions = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+
+        for (const [rowDir, colDir] of directions) {
+            const targetRow = row + 2 * rowDir;
+            const targetCol = col + 2 * colDir;
+            const middleRow = row + rowDir;
+            const middleCol = col + colDir;
+            if (targetRow >= 0 && targetRow < this.checkersBoard.length &&
+                targetCol >= 0 && targetCol < this.checkersBoard[0].length &&
+                (this.checkersBoard[middleRow][middleCol] === opponentColor || this.checkersBoard[middleRow][middleCol] === opponentKing) &&
+                this.checkersBoard[targetRow][targetCol] === this.EMPTY_SQUARE) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     selectSquare(row, col) {
         if (document.querySelector(".end-game-message").style.display === "block") {
@@ -222,6 +260,7 @@ class CheckersGame {
             this.selectedSquare = null;
         }
     }
+
     removePreviousSelectionHighlight() {
         document.querySelectorAll(".selected").forEach(square => {
             square.classList.remove("selected");
@@ -254,27 +293,6 @@ class CheckersGame {
         }
     }
 
-    hasMoreJumps(row, col) {
-        const piece = this.checkersBoard[row][col];
-        const opponentColor = this.currentPlayer === 'W' ? 'B' : 'W';
-        const directions = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
-
-        for (const [rowDir, colDir] of directions) {
-            const targetRow = row + 2 * rowDir;
-            const targetCol = col + 2 * colDir;
-            const middleRow = row + rowDir;
-            const middleCol = col + colDir;
-            if (targetRow >= 0 && targetRow < this.checkersBoard.length &&
-                targetCol >= 0 && targetCol < this.checkersBoard[0].length &&
-                this.checkersBoard[middleRow][middleCol] === opponentColor &&
-                this.checkersBoard[targetRow][targetCol] === this.EMPTY_SQUARE) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     updateBoardViewWithAnimation(startRow, startCol, endRow, endCol) {
         const startSquare = document.querySelector(`.square[data-row="${startRow}"][data-col="${startCol}"]`);
         const endSquare = document.querySelector(`.square[data-row="${endRow}"][data-col="${endCol}"]`);
@@ -291,20 +309,20 @@ class CheckersGame {
             }, 200);
         }, 200);
     }
-
     updateBoardView(endRow, endCol) {
-
         const boardElement = document.querySelector(".checkers-board");
         if (!boardElement) {
             this.displayErrorMessage("שגיאה: רכיב לוח לא נמצא.");
             return;
         }
+
         // בדיקה והמרת השחקן למלך אם התנאים מתקיימים
         if (this.currentPlayer === 'W' && endRow === 0) {
             this.checkersBoard[endRow][endCol] = 'WK'; // מלך לבן
         } else if (this.currentPlayer === 'B' && endRow === this.checkersBoard.length - 1) {
             this.checkersBoard[endRow][endCol] = 'BK'; // מלך שחור
         }
+
         boardElement.innerHTML = '';
         for (let i = 0; i < this.checkersBoard.length; i++) {
             for (let j = 0; j < this.checkersBoard[i].length; j++) {
@@ -330,10 +348,11 @@ class CheckersGame {
             this.createKingPiece(square, "black-king-piece", row, col);
         } else if (pieceValue === 'WK') {
             this.createKingPiece(square, "white-king-piece", row, col);
-
         }
+
         return square;
     }
+
     createKingPiece(square, pieceClass, row, col) {
         const piece = document.createElement("div");
         piece.classList.add(pieceClass);
@@ -369,6 +388,7 @@ class CheckersGame {
             });
         });
     }
+
     displayEndGameMessage(message, row, col) {
         let endGameMessageElement = document.querySelector(".end-game-message");
         let positionMessage = row !== undefined && col !== undefined ? `Row: ${row}, Col: ${col}` : '';
